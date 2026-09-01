@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+
+<!-- Profile header, styled to match the dashboard hero banner -->
+<div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-900 p-6 sm:p-9 mb-6 shadow-lg shadow-indigo-900/20">
+    <div class="absolute inset-0 opacity-[0.07]"
+         style="background-image: radial-gradient(circle, white 1px, transparent 1px); background-size: 20px 20px;"></div>
+    <div class="absolute -top-16 -right-16 w-72 h-72 rounded-full bg-white/10 blur-2xl"></div>
+    <div class="absolute -bottom-20 -left-16 w-72 h-72 rounded-full bg-violet-400/20 blur-2xl"></div>
+
+    <div class="relative z-10 flex items-center gap-4">
+        <div class="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white font-bold text-2xl shrink-0 shadow-inner">
+            {{ (person.name.split()[0][0] ~ person.name.split()[-1][0])|upper }}
+        </div>
+        <div>
+            <span class="inline-block text-[10px] font-semibold uppercase tracking-wider text-indigo-200 bg-white/10 px-2 py-0.5 rounded-full mb-1.5">
+                {{ person.role.replace('_', ' ') }}{% if person.designation %} · {{ person.designation }}{% endif %}
+            </span>
+            <h3 class="text-2xl font-extrabold text-white leading-tight">{{ person.name }}</h3>
+            <p class="text-sm text-indigo-100/90 mt-0.5">{{ person.email }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+    <!-- Left: quick facts -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+        <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Details</h4>
+        <dl class="space-y-3 text-sm">
+            <div class="flex justify-between gap-3">
+                <dt class="text-slate-500 dark:text-slate-400">Role</dt>
+                <dd class="font-medium text-slate-800 dark:text-slate-200 capitalize">{{ person.role.replace('_', ' ') }}</dd>
+            </div>
+            {% if person.designation %}
+            <div class="flex justify-between gap-3">
+                <dt class="text-slate-500 dark:text-slate-400">Designation</dt>
+                <dd class="font-medium text-slate-800 dark:text-slate-200">{{ person.designation }}</dd>
+            </div>
+            {% endif %}
+            <div class="flex justify-between gap-3">
+                <dt class="text-slate-500 dark:text-slate-400">Email</dt>
+                <dd class="font-medium text-slate-800 dark:text-slate-200 truncate">{{ person.email }}</dd>
+            </div>
+            {% if person.role == 'project_manager' %}
+            <div class="flex justify-between gap-3">
+                <dt class="text-slate-500 dark:text-slate-400">Total Projects</dt>
+                <dd class="font-medium text-slate-800 dark:text-slate-200">{{ stats.projects }}</dd>
+            </div>
+            <div class="flex justify-between gap-3">
+                <dt class="text-slate-500 dark:text-slate-400">Team Size</dt>
+                <dd class="font-medium text-slate-800 dark:text-slate-200">{{ stats.team_size }}</dd>
+            </div>
+            {% else %}
+            <div class="flex justify-between gap-3">
+                <dt class="text-slate-500 dark:text-slate-400">Assigned Tasks</dt>
+                <dd class="font-medium text-slate-800 dark:text-slate-200">{{ stats.tasks }}</dd>
+            </div>
+            {% if stats.manager_name %}
+            <div class="flex justify-between gap-3">
+                <dt class="text-slate-500 dark:text-slate-400">Reports To</dt>
+                <dd class="font-medium text-slate-800 dark:text-slate-200">{{ stats.manager_name }}</dd>
+            </div>
+            {% endif %}
+            {% endif %}
+            {% if person.created_at %}
+            <div class="flex justify-between gap-3">
+                <dt class="text-slate-500 dark:text-slate-400">Joined</dt>
+                <dd class="font-medium text-slate-800 dark:text-slate-200">{{ person.created_at.strftime('%d %b %Y') }}</dd>
+            </div>
+            {% endif %}
+        </dl>
+    </div>
+
+    <!-- Right: personal description / bio -->
+    <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+        <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">About</h4>
+
+        {% if person.bio %}
+        <p class="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-line mb-6">{{ person.bio }}</p>
+        {% else %}
+        <p class="text-sm text-slate-400 dark:text-slate-500 italic mb-6">No description added yet.</p>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('profile.edit_profile') }}">
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                {{ 'Edit description' if person.bio else 'Add a description' }}
+            </label>
+            <textarea name="bio" rows="4" maxlength="2000" placeholder="Write a short description about yourself..."
+                      class="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg text-sm
+                             bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200
+                             focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">{{ person.bio or '' }}</textarea>
+            <button type="submit"
+                    class="mt-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition">
+                Save
+            </button>
+        </form>
+    </div>
+
+</div>
+
+{% endblock %}

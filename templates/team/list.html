@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Team Members{% endblock %}
+{% block page_title %}Team Members{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+    <p class="text-sm text-slate-500 dark:text-slate-400">{{ member_rows|length }} people on your team</p>
+
+    <form method="POST" action="{{ url_for('team.add_member') }}"
+          class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        <input type="text" name="name" placeholder="Full name" required
+               class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm w-full sm:w-52
+                      bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200
+                      focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+
+        <select name="designation"
+                class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm w-full sm:w-56
+                       bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200
+                       focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            {% for d in designations %}
+            <option value="{{ d }}" {% if d == 'Software Engineer' %}selected{% endif %}>{{ d }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit"
+                class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg
+                       text-sm transition whitespace-nowrap">
+            Add member
+        </button>
+    </form>
+</div>
+
+{% if member_rows|length == 0 %}
+    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center">
+        <p class="text-slate-500 dark:text-slate-400 text-sm">No team members yet. Add one above.</p>
+    </div>
+{% else %}
+
+<div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <table class="w-full text-sm">
+        <thead class="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+            <tr>
+                <th class="text-left px-5 py-3 font-medium text-slate-500 dark:text-slate-400">Name</th>
+                <th class="text-left px-5 py-3 font-medium text-slate-500 dark:text-slate-400">Designation</th>
+                <th class="text-left px-5 py-3 font-medium text-slate-500 dark:text-slate-400 hidden sm:table-cell">Email</th>
+                <th class="text-left px-5 py-3 font-medium text-slate-500 dark:text-slate-400">Tasks</th>
+                <th class="text-right px-5 py-3 font-medium text-slate-500 dark:text-slate-400">Action</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+            {% for row in member_rows %}
+            <tr>
+                <td class="px-5 py-3 font-medium text-slate-900 dark:text-white">{{ row.member.name }}</td>
+                <td class="px-5 py-3">
+                    <form method="POST" action="{{ url_for('team.update_designation', member_id=row.member.id) }}">
+                        <select name="designation" onchange="this.form.submit()"
+                                class="text-[11px] font-medium pl-2 pr-6 py-1 rounded-full border border-indigo-200 dark:border-indigo-800
+                                       bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400
+                                       focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
+                            {% for d in designations %}
+                            <option value="{{ d }}" {% if (row.member.designation or "Software Engineer") == d %}selected{% endif %}>{{ d }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </td>
+                <td class="px-5 py-3 text-slate-500 dark:text-slate-400 hidden sm:table-cell">{{ row.member.email }}</td>
+                <td class="px-5 py-3 text-slate-500 dark:text-slate-400">{{ row.task_count }}</td>
+                <td class="px-5 py-3 text-right">
+                    <form method="POST" action="{{ url_for('team.remove_member', member_id=row.member.id) }}"
+                          onsubmit="return confirm('Remove {{ row.member.name }} from your team?');">
+                        <button type="submit" class="text-red-600 hover:text-red-800 text-sm font-medium">
+                            Remove
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endif %}
+
+{% endblock %}
