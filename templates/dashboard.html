@@ -7,230 +7,207 @@
 
 {% set total_tasks = chart_data['values'] | sum %}
 {% set completion_pct = ((chart_data['values'][2] / total_tasks) * 100) | round(0, 'floor') if total_tasks > 0 else 0 %}
+{% set proj_colors = ['#e11d48', '#0ea5e9', '#d97706', '#059669', '#7c3aed', '#0891b2'] %}
 
-<!-- Hero banner -->
-<div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-900 p-6 sm:p-9 mb-6 shadow-lg shadow-indigo-900/20">
-    <div class="absolute inset-0 opacity-[0.07]"
-         style="background-image: radial-gradient(circle, white 1px, transparent 1px); background-size: 20px 20px;"></div>
-    <div class="absolute -top-16 -right-16 w-72 h-72 rounded-full bg-white/10 blur-2xl"></div>
-    <div class="absolute -bottom-20 -left-16 w-72 h-72 rounded-full bg-violet-400/20 blur-2xl"></div>
+{# The layout reacts to what actually needs attention: overdue tasks get the
+   spotlight tile; otherwise in-progress; otherwise a "nice work" done tile. #}
+{% set feature = 'overdue' if stats.overdue > 0 else ('in_progress' if stats.in_progress > 0 else 'done') %}
 
-    <div class="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-        <div class="flex items-center gap-4">
-            <div class="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white font-bold text-2xl shrink-0 shadow-inner">
-                {{ (current_user.name.split()[0][0] ~ current_user.name.split()[-1][0])|upper }}
-            </div>
-            <div>
-                <span class="inline-block text-[11px] font-semibold text-indigo-200 bg-white/10 px-2.5 py-0.5 rounded-full mb-1.5 capitalize">
+<style>
+    @keyframes riseIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .rise-1 { animation: riseIn .5s ease-out both; }
+    .rise-2 { animation: riseIn .5s ease-out .08s both; }
+    .rise-3 { animation: riseIn .5s ease-out .16s both; }
+    .rise-4 { animation: riseIn .5s ease-out .24s both; }
+    .blob { border-radius: 42% 58% 65% 35% / 45% 45% 55% 55%; }
+</style>
+
+<!-- ================= Warm canvas wrapper: gives this page its own identity ================= -->
+<div class="rounded-[2rem] bg-orange-50/60 dark:bg-stone-900/40 border border-orange-100 dark:border-stone-800 p-4 sm:p-6">
+
+    <!-- ============ Greeting + completion ============ -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+
+        <div class="rise-1 relative overflow-hidden lg:col-span-2 bg-white dark:bg-stone-900 rounded-[2rem] border border-orange-100 dark:border-stone-800 p-7 sm:p-9">
+            <div class="blob absolute -top-16 -right-16 w-56 h-56 bg-orange-200/40 dark:bg-orange-500/10"></div>
+            <div class="relative z-10">
+                <span class="inline-block text-[11px] font-semibold text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-500/10 px-2.5 py-0.5 rounded-full mb-3 capitalize">
                     {{ current_user.role.replace('_', ' ') }}
                 </span>
-                <h3 class="text-2xl font-extrabold text-white leading-tight">Welcome back, {{ current_user.name.split(' ')[0] }}</h3>
-                <p class="text-sm text-indigo-100/90 mt-0.5">
+                <h3 class="text-3xl sm:text-4xl font-black text-stone-900 dark:text-white leading-none tracking-tight">
+                    Hey {{ current_user.name.split(' ')[0] }} 👋
+                </h3>
+                <p class="text-sm text-stone-500 dark:text-stone-400 mt-2 max-w-sm">
                     {% if current_user.role == 'project_manager' %}
-                        Here's an overview of your projects and team.
+                        Here's what's moving across your projects right now.
                     {% else %}
-                        Here's an overview of your assigned tasks.
+                        Here's what's on your plate right now.
                     {% endif %}
                 </p>
 
-                <!-- NEW: overall completion progress, derived from the same task totals used below -->
-                {% if total_tasks > 0 %}
-                <div class="flex items-center gap-2.5 mt-3.5 max-w-[220px]">
-                    <div class="flex-1 h-1.5 rounded-full bg-white/15 overflow-hidden">
-                        <div class="h-full rounded-full bg-white/80" style="width: {{ completion_pct }}%"></div>
-                    </div>
-                    <span class="text-[11px] font-medium text-indigo-100/90 tabular-nums shrink-0">{{ completion_pct|int }}% done</span>
+                <div class="flex items-end gap-2 mt-6">
+                    <span class="text-6xl sm:text-7xl font-black text-orange-600 dark:text-orange-400 leading-none tracking-tighter">{{ stats.primary_count }}</span>
+                    <span class="text-sm text-stone-500 dark:text-stone-400 mb-2">{{ stats.primary_label.lower() }}</span>
                 </div>
+            </div>
+        </div>
+
+        {% if total_tasks > 0 %}
+        <div class="rise-2 bg-white dark:bg-stone-900 rounded-[2rem] border border-orange-100 dark:border-stone-800 p-7 flex flex-col items-center justify-center text-center">
+            <div class="relative w-24 h-24 rounded-full shrink-0"
+                 style="background: conic-gradient(#ea580c {{ completion_pct }}%, rgba(234,88,12,0.12) 0);">
+                <div class="absolute inset-[6px] rounded-full bg-white dark:bg-stone-900 flex items-center justify-center">
+                    <span class="text-xl font-black text-stone-900 dark:text-white">{{ completion_pct|int }}%</span>
+                </div>
+            </div>
+            <p class="text-xs text-stone-500 dark:text-stone-400 mt-4">{{ total_tasks }} tasks tracked overall</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ============ Adaptive metric tiles: the one that needs attention gets bigger ============ -->
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-4">
+
+        <div class="rise-3 sm:col-span-2 rounded-[2rem] p-7 flex flex-col justify-center
+                    {% if feature == 'overdue' %}bg-rose-600 text-white
+                    {% elif feature == 'in_progress' %}bg-amber-500 text-white
+                    {% else %}bg-emerald-600 text-white{% endif %}">
+            <p class="text-6xl font-black leading-none tracking-tighter">
+                {% if feature == 'overdue' %}{{ stats.overdue }}
+                {% elif feature == 'in_progress' %}{{ stats.in_progress }}
+                {% else %}{{ stats.done }}{% endif %}
+            </p>
+            <p class="text-sm font-medium mt-3 opacity-90">
+                {% if feature == 'overdue' %}
+                    task{{ 's' if stats.overdue != 1 else '' }} need{{ '' if stats.overdue != 1 else 's' }} your attention
+                {% elif feature == 'in_progress' %}
+                    task{{ 's' if stats.in_progress != 1 else '' }} currently in motion
+                {% else %}
+                    task{{ 's' if stats.done != 1 else '' }} shipped — nice work
                 {% endif %}
-            </div>
+            </p>
         </div>
 
-        <div class="flex items-center gap-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl px-7 py-5 shrink-0 shadow-inner">
-            <div class="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
-                    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/>
-                </svg>
-            </div>
-            <div>
-                <p class="text-4xl font-extrabold text-white leading-none tabular-nums">{{ stats.primary_count }}</p>
-                <p class="text-xs text-indigo-100/90 mt-1.5">{{ stats.primary_label }}</p>
-            </div>
+        {% if feature != 'in_progress' %}
+        <div class="rise-3 bg-white dark:bg-stone-900 rounded-[2rem] border border-orange-100 dark:border-stone-800 p-6 flex flex-col justify-center">
+            <p class="text-xs font-medium text-stone-500 dark:text-stone-400 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-500"></span>In Progress</p>
+            <p class="text-3xl font-black text-stone-900 dark:text-white mt-1">{{ stats.in_progress }}</p>
         </div>
-    </div>
-</div>
-
-<!-- Stat strip: same 3 metrics, unified into one ledger-style panel -->
-<div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 dark:divide-slate-700
-            bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mb-6 overflow-hidden">
-
-    <div class="group relative p-5 sm:p-6 hover:bg-slate-50/60 dark:hover:bg-slate-700/20 transition">
-        <div class="flex items-start justify-between mb-3">
-            <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2">
-                    <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>
-                </svg>
-            </div>
-            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+        {% endif %}
+        {% if feature != 'done' %}
+        <div class="rise-3 bg-white dark:bg-stone-900 rounded-[2rem] border border-orange-100 dark:border-stone-800 p-6 flex flex-col justify-center">
+            <p class="text-xs font-medium text-stone-500 dark:text-stone-400 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Completed</p>
+            <p class="text-3xl font-black text-stone-900 dark:text-white mt-1">{{ stats.done }}</p>
         </div>
-        <p class="text-xs font-medium text-slate-500 dark:text-slate-400">In Progress</p>
-        <p class="text-3xl font-bold tabular-nums text-amber-600 mt-0.5">{{ stats.in_progress }}</p>
+        {% endif %}
+        {% if feature != 'overdue' %}
+        <div class="rise-3 bg-white dark:bg-stone-900 rounded-[2rem] border border-orange-100 dark:border-stone-800 p-6 flex flex-col justify-center">
+            <p class="text-xs font-medium text-stone-500 dark:text-stone-400 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-rose-500"></span>Overdue</p>
+            <p class="text-3xl font-black text-stone-900 dark:text-white mt-1">{{ stats.overdue }}</p>
+        </div>
+        {% endif %}
     </div>
 
-    <div class="group relative p-5 sm:p-6 hover:bg-slate-50/60 dark:hover:bg-slate-700/20 transition">
-        <div class="flex items-start justify-between mb-3">
-            <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2">
-                    <path d="M20 6L9 17l-5-5"/>
-                </svg>
-            </div>
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+    <!-- ============ Chart + Reminders ============ -->
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-4">
+
+        <div class="rise-4 lg:col-span-2 bg-white dark:bg-stone-900 rounded-[2rem] border border-orange-100 dark:border-stone-800 p-7">
+            <h4 class="text-sm font-bold text-stone-700 dark:text-stone-300 mb-4">Status breakdown</h4>
+            {% if total_tasks == 0 %}
+                <div class="flex flex-col items-center justify-center py-10 text-center">
+                    <p class="text-4xl mb-2">🗂️</p>
+                    <p class="text-sm text-stone-500 dark:text-stone-400">No tasks yet.</p>
+                </div>
+            {% else %}
+                <div class="relative max-w-[180px] mx-auto">
+                    <canvas id="statusChart"></canvas>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span class="text-2xl font-black text-stone-900 dark:text-white">{{ total_tasks }}</span>
+                        <span class="text-[11px] text-stone-500 dark:text-stone-400">tasks</span>
+                    </div>
+                </div>
+                <div class="space-y-2 mt-6">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="flex items-center gap-1.5 text-stone-500 dark:text-stone-400"><span class="w-2 h-2 rounded-full bg-stone-400"></span>To Do</span>
+                        <span class="font-bold text-stone-700 dark:text-stone-300">{{ chart_data['values'][0] }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="flex items-center gap-1.5 text-stone-500 dark:text-stone-400"><span class="w-2 h-2 rounded-full bg-amber-500"></span>In Progress</span>
+                        <span class="font-bold text-stone-700 dark:text-stone-300">{{ chart_data['values'][1] }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="flex items-center gap-1.5 text-stone-500 dark:text-stone-400"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Done</span>
+                        <span class="font-bold text-stone-700 dark:text-stone-300">{{ chart_data['values'][2] }}</span>
+                    </div>
+                </div>
+            {% endif %}
         </div>
-        <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Completed</p>
-        <p class="text-3xl font-bold tabular-nums text-emerald-600 mt-0.5">{{ stats.done }}</p>
-    </div>
 
-    <div class="group relative p-5 sm:p-6 hover:bg-slate-50/60 dark:hover:bg-slate-700/20 transition">
-        <div class="flex items-start justify-between mb-3">
-            <div class="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2">
-                    <path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/>
-                </svg>
-            </div>
-            <span class="w-2 h-2 rounded-full bg-red-400"></span>
-        </div>
-        <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Overdue</p>
-        <p class="text-3xl font-bold tabular-nums text-red-600 mt-0.5">{{ stats.overdue }}</p>
-    </div>
+        <div class="rise-4 lg:col-span-3 bg-white dark:bg-stone-900 rounded-[2rem] border border-orange-100 dark:border-stone-800 p-7">
+            <h4 class="text-sm font-bold text-stone-700 dark:text-stone-300 mb-4">
+                Reminders {% if reminders %}<span class="text-stone-400 dark:text-stone-500 font-normal">({{ reminders|length }})</span>{% endif %}
+            </h4>
 
-</div>
-
-<!-- Chart + Reminders -->
-<div class="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-6">
-
-    <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
-        <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Task status breakdown</h4>
-        {% if total_tasks == 0 %}
+            {% if reminders %}
+            <ul class="space-y-1">
+                {% for r in reminders %}
+                {% set pcolor = proj_colors[r.task.project.name|length % proj_colors|length] %}
+                <li>
+                    <a href="{{ url_for('tasks.task_detail', task_id=r.task.id) }}"
+                       class="flex items-center gap-3 hover:bg-orange-50/70 dark:hover:bg-stone-800/60 rounded-2xl px-3 py-3 transition">
+                        <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: {{ pcolor }}"></span>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-semibold text-stone-900 dark:text-white truncate">{{ r.task.title }}</p>
+                            <p class="text-xs text-stone-500 dark:text-stone-400">{{ r.task.project.name }}</p>
+                        </div>
+                        <span class="shrink-0 text-xs font-bold px-2.5 py-1 rounded-full
+                                     {% if r.is_overdue %}bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400
+                                     {% elif r.days_left == 0 %}bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400
+                                     {% else %}bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400{% endif %}">
+                            {% if r.is_overdue %}{{ -r.days_left }}d overdue
+                            {% elif r.days_left == 0 %}Due today
+                            {% else %}{{ r.days_left }}d left{% endif %}
+                        </span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
             <div class="flex flex-col items-center justify-center py-10 text-center">
-                <div class="w-11 h-11 rounded-xl bg-slate-50 dark:bg-slate-700/40 flex items-center justify-center mb-3">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-400">
-                        <rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/>
-                    </svg>
-                </div>
-                <p class="text-sm text-slate-500 dark:text-slate-400">No tasks yet.</p>
+                <p class="text-4xl mb-2">✅</p>
+                <p class="text-sm text-stone-500 dark:text-stone-400">Nothing due soon.</p>
             </div>
-        {% else %}
-            <div class="relative max-w-xs mx-auto">
-                <canvas id="statusChart"></canvas>
-                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span class="text-2xl font-bold tabular-nums text-slate-900 dark:text-white">{{ total_tasks }}</span>
-                    <span class="text-[11px] text-slate-500 dark:text-slate-400">total tasks</span>
-                </div>
-            </div>
-            <div class="flex items-center justify-center gap-4 mt-5 pt-4 border-t border-slate-100 dark:border-slate-700">
-                <div class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                    <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span> {{ chart_data['values'][0] }} To Do
-                </div>
-                <div class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> {{ chart_data['values'][1] }} In Progress
-                </div>
-                <div class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> {{ chart_data['values'][2] }} Done
-                </div>
-            </div>
-        {% endif %}
-    </div>
-
-    <div class="lg:col-span-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
-        <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">
-            Reminders {% if reminders %}({{ reminders|length }}){% endif %}
-        </h4>
-
-        {% if reminders %}
-        <ul class="space-y-1">
-            {% for r in reminders %}
-            <li>
-                <a href="{{ url_for('tasks.task_detail', task_id=r.task.id) }}"
-                   class="flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/40 rounded-xl px-3 py-2.5 transition border-l-2
-                          {% if r.is_overdue %}border-red-400
-                          {% elif r.days_left == 0 %}border-amber-400
-                          {% else %}border-amber-200 dark:border-amber-900/60{% endif %}">
-                    <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0
-                                {% if r.is_overdue %}bg-red-50 dark:bg-red-900/30
-                                {% elif r.days_left == 0 %}bg-amber-100 dark:bg-amber-900/40
-                                {% else %}bg-amber-50 dark:bg-amber-900/20{% endif %}">
-                        {% if r.is_overdue %}
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>
-                        {% else %}
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-                        {% endif %}
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-sm font-medium text-slate-900 dark:text-white truncate">{{ r.task.title }}</p>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ r.task.project.name }}</p>
-                    </div>
-                    <span class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full
-                                 {% if r.is_overdue %}
-                                    bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400
-                                 {% elif r.days_left == 0 %}
-                                    bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400
-                                 {% else %}
-                                    bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400
-                                 {% endif %}">
-                        {% if r.is_overdue %}
-                            {{ -r.days_left }} day{{ 's' if -r.days_left != 1 else '' }} overdue
-                        {% elif r.days_left == 0 %}
-                            Due today
-                        {% else %}
-                            Due in {{ r.days_left }} day{{ 's' if r.days_left != 1 else '' }}
-                        {% endif %}
-                    </span>
-                </a>
-            </li>
-            {% endfor %}
-        </ul>
-        {% else %}
-        <div class="flex flex-col items-center justify-center py-10 text-center">
-            <div class="w-11 h-11 rounded-xl bg-slate-50 dark:bg-slate-700/40 flex items-center justify-center mb-3">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-400">
-                    <path d="M20 6L9 17l-5-5"/>
-                </svg>
-            </div>
-            <p class="text-sm text-slate-500 dark:text-slate-400">Nothing due soon.</p>
+            {% endif %}
         </div>
-        {% endif %}
+
     </div>
 
-</div>
-
-<!-- My Tasks (live, via /api/my-tasks) -->
-<div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
-    <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2">
-                    <rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/>
-                </svg>
+    <!-- ============ My Tasks (live, via /api/my-tasks) ============ -->
+    <div class="rise-4 bg-white dark:bg-stone-900 rounded-[2rem] border border-orange-100 dark:border-stone-800 p-7">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+                <h4 class="text-sm font-bold text-stone-700 dark:text-stone-300">My Tasks</h4>
+                <span class="text-[10px] text-stone-400 dark:text-stone-500 font-normal">live via /api/my-tasks</span>
             </div>
-            <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-300">My Tasks</h4>
-            <span class="text-[10px] text-slate-400 dark:text-slate-500 font-normal">live via /api/my-tasks</span>
+            <span id="myTasksCount" class="text-xs text-stone-400 dark:text-stone-500"></span>
         </div>
-        <span id="myTasksCount" class="text-xs text-slate-400 dark:text-slate-500"></span>
+
+        <div id="myTasksLoading" class="flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400">
+            <span class="w-3.5 h-3.5 rounded-full border-2 border-stone-300 dark:border-stone-600 border-t-orange-500 animate-spin"></span>
+            Loading your tasks…
+        </div>
+
+        <div id="myTasksError" class="hidden text-sm text-rose-600 dark:text-rose-400">
+            Couldn't load tasks from the API.
+        </div>
+
+        <ul id="myTasksList" class="hidden divide-y divide-orange-50 dark:divide-stone-800"></ul>
+
+        <p id="myTasksEmpty" class="hidden text-sm text-stone-500 dark:text-stone-400">
+            No tasks assigned to you right now.
+        </p>
     </div>
 
-    <div id="myTasksLoading" class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-        <span class="w-3.5 h-3.5 rounded-full border-2 border-slate-300 dark:border-slate-600 border-t-indigo-500 animate-spin"></span>
-        Loading your tasks…
-    </div>
-
-    <div id="myTasksError" class="hidden text-sm text-red-600 dark:text-red-400">
-        Couldn't load tasks from the API.
-    </div>
-
-    <ul id="myTasksList" class="hidden divide-y divide-slate-100 dark:divide-slate-700"></ul>
-
-    <p id="myTasksEmpty" class="hidden text-sm text-slate-500 dark:text-slate-400">
-        No tasks assigned to you right now.
-    </p>
 </div>
 
 {% endblock %}
@@ -246,15 +223,13 @@
             labels: {{ chart_data['labels'] | tojson }},
             datasets: [{
                 data: {{ chart_data['values'] | tojson }},
-                backgroundColor: ['#94a3b8', '#f59e0b', '#10b981'],
+                backgroundColor: ['#a8a29e', '#f59e0b', '#059669'],
                 borderWidth: 0
             }]
         },
         options: {
-            plugins: {
-                legend: { display: false }
-            },
-            cutout: '70%'
+            plugins: { legend: { display: false } },
+            cutout: '74%'
         }
     });
 </script>
@@ -262,18 +237,23 @@
 
 <script>
     const STATUS_STYLES = {
-        to_do:       'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400',
-        in_progress: 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
-        done:        'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
+        to_do:       'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400',
+        in_progress: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
+        done:        'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
     };
 
-    // NEW: small priority dot shown next to each task title (data was already
-    // available from /api/my-tasks but wasn't being used before)
     const PRIORITY_DOT = {
-        low:    'bg-slate-300 dark:bg-slate-600',
+        low:    'bg-stone-300 dark:bg-stone-600',
         medium: 'bg-amber-400',
-        high:   'bg-red-500'
+        high:   'bg-rose-500'
     };
+
+    const PROJECT_COLORS = ['#e11d48', '#0ea5e9', '#d97706', '#059669', '#7c3aed', '#0891b2'];
+
+    function projectColor(name) {
+        if (!name) return null;
+        return PROJECT_COLORS[name.length % PROJECT_COLORS.length];
+    }
 
     function renderMyTasks(tasks) {
         const list = document.getElementById('myTasksList');
@@ -293,13 +273,15 @@
             const due = task.due_date ? `Due ${task.due_date}` : 'No due date';
             const priorityDot = PRIORITY_DOT[task.priority] || PRIORITY_DOT.medium;
             const projectName = task.project_name ? task.project_name : '';
+            const pColor = projectColor(projectName);
 
             return `
                 <li class="py-3 flex items-center gap-3">
                     <span class="w-1.5 h-1.5 rounded-full shrink-0 ${priorityDot}" title="${task.priority || ''} priority"></span>
                     <div class="min-w-0 flex-1">
-                        <p class="text-sm font-medium text-slate-900 dark:text-white truncate">${task.title}</p>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">
+                        <p class="text-sm font-semibold text-stone-900 dark:text-white truncate">${task.title}</p>
+                        <p class="text-xs text-stone-500 dark:text-stone-400 flex items-center gap-1.5 mt-0.5">
+                            ${pColor ? `<span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color:${pColor}"></span>` : ''}
                             ${due}${projectName ? ` · ${projectName}` : ''}
                         </p>
                     </div>
@@ -319,11 +301,7 @@
 
         try {
             const response = await fetch('/api/my-tasks');
-
-            if (!response.ok) {
-                throw new Error('Request failed with status ' + response.status);
-            }
-
+            if (!response.ok) throw new Error('Request failed with status ' + response.status);
             const data = await response.json();
             loading.classList.add('hidden');
             renderMyTasks(data.tasks);
